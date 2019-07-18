@@ -1,13 +1,13 @@
 var SafeMath = artifacts.require('./zeppelin/SafeMath.sol');
-var PillarPresale = artifacts.require('./PillarPresale.sol');
+// var PillarPresale = artifacts.require('./PillarPresale.sol');
 var UnsoldAllocation = artifacts.require('./UnsoldAllocation.sol');
 var TeamAllocation = artifacts.require("./TeamAllocation.sol");
 var PillarToken = artifacts.require("./PillarToken.sol");
 
 module.exports = function(deployer) {
  //mainnet
-  const tokenMultisigWallet = '0x05a9afd79a05c3e1afefa282ef8d58f9366b160b';
-  const icedWallet = '0xff678a624472fe0d195e3cac47dec2375dc2d8be';
+  const tokenMultisigWallet = '0xF5aFd2285e071e1e8e415Ce9Af8641fdBF66410d';
+  const icedWallet = '0xF5aFd2285e071e1e8e415Ce9Af8641fdBF66410d';
 
   deployer.deploy(SafeMath);
   //deployer.link(SafeMath,PillarPresale);

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.11;
+pragma solidity ^0.4.24;
 
 
 import "../ownership/Ownable.sol";
@@ -16,36 +16,34 @@ contract Pausable is Ownable {
 
 
   /**
-   * @dev modifier to allow actions only when the contract IS paused
+   * @dev Modifier to make a function callable only when the contract is not paused.
    */
   modifier whenNotPaused() {
-    if (paused) throw;
+    require(!paused);
     _;
   }
 
   /**
-   * @dev modifier to allow actions only when the contract IS NOT paused
+   * @dev Modifier to make a function callable only when the contract is paused.
    */
-  modifier whenPaused {
-    if (!paused) throw;
+  modifier whenPaused() {
+    require(paused);
     _;
   }
 
   /**
    * @dev called by the owner to pause, triggers stopped state
    */
-  function pause() onlyOwner whenNotPaused returns (bool) {
+  function pause() public onlyOwner whenNotPaused {
     paused = true;
-    Pause();
-    return true;
+    emit Pause();
   }
 
   /**
    * @dev called by the owner to unpause, returns to normal state
    */
-  function unpause() onlyOwner whenPaused returns (bool) {
+  function unpause() public onlyOwner whenPaused {
     paused = false;
-    Unpause();
-    return true;
+    emit Unpause();
   }
 }

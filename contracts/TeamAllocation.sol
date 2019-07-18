@@ -14,7 +14,7 @@ contract TeamAllocation is Ownable {
   //address of the team storage vault
   address public teamStorageVault = 0x3f5D90D5Cc0652AAa40519114D007Bf119Afe1Cf;
 
-  function TeamAllocation() {
+  constructor() {
     plr = PillarToken(msg.sender);
     // Locked time of approximately 9 months before team members are able to redeeem tokens.
     uint nineMonths = 9 * 30 days;

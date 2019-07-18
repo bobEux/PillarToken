@@ -3,7 +3,7 @@ pragma solidity ^0.4.11;
 import './TeamAllocation.sol';
 import './UnsoldAllocation.sol';
 import './zeppelin/SafeMath.sol';
-import './zeppelin/token/StandardToken.sol';
+import './zeppelin/ERC20/StandardToken.sol';
 import './zeppelin/ownership/Ownable.sol';
 import './zeppelin/lifecycle/Pausable.sol';
 
@@ -15,6 +15,7 @@ contract PillarToken is StandardToken, Ownable {
     string public constant name = "PILLAR";
     string public constant symbol = "PLR";
     uint public constant decimals = 18;
+    uint public totalSupply;
 
     TeamAllocation public teamAllocation;
     UnsoldAllocation public unsoldTokens;
@@ -30,9 +31,9 @@ contract PillarToken is StandardToken, Ownable {
     uint constant public lockedTeamAllocationTokens   =  16000000e18;
     uint constant public unlockedTeamAllocationTokens =   8000000e18;
 
-    address public unlockedTeamStorageVault = 0x4162Ad6EEc341e438eAbe85f52a941B078210819;
-    address public twentyThirtyVault = 0xe72bA5c6F63Ddd395DF9582800E2821cE5a05D75;
-    address public futureSaleVault = 0xf0231160Bd1a2a2D25aed2F11B8360EbF56F6153;
+    address public unlockedTeamStorageVault = 0xF5aFd2285e071e1e8e415Ce9Af8641fdBF66410d;
+    address public twentyThirtyVault = 0xF5aFd2285e071e1e8e415Ce9Af8641fdBF66410d;
+    address public futureSaleVault = 0xF5aFd2285e071e1e8e415Ce9Af8641fdBF66410d;
     address unsoldVault;
 
     //Storage years
@@ -61,21 +62,21 @@ contract PillarToken is StandardToken, Ownable {
     event MoneyAddedForRefund(address _from, uint256 _value,uint256 _total);
 
     modifier isNotFundable() {
-        if (fundingMode) throw;
+      require(!fundingMode);
         _;
     }
 
     modifier isFundable() {
-        if (!fundingMode) throw;
+      require(fundingMode);
         _;
     }
 
     //@notice  Constructor of PillarToken
     //@param `_pillarTokenFactory` - multisigwallet address to store proceeds.
     //@param `_icedWallet` - Multisigwallet address to which unsold tokens are assigned
-    function PillarToken(address _pillarTokenFactory, address _icedWallet) {
-      if(_pillarTokenFactory == address(0)) throw;
-      if(_icedWallet == address(0)) throw;
+    constructor(address _pillarTokenFactory, address _icedWallet) {
+      require(_pillarTokenFactory != address(0));
+      require(_icedWallet != address(0));
 
       pillarTokenFactory = _pillarTokenFactory;
       totalUsedTokens = 0;
@@ -105,25 +106,25 @@ contract PillarToken is StandardToken, Ownable {
     //@notice function that accepts the ether and allocates tokens to
     //the msg.sender corresponding to msg.value
     function purchase() payable isFundable {
-      if(block.number < fundingStartBlock) throw;
-      if(block.number > fundingStopBlock) throw;
-      if(totalUsedTokens >= totalAvailableForSale) throw;
+      require(block.number >= fundingStartBlock);
+      require(block.number <= fundingStopBlock);
+      require(totalUsedTokens < totalAvailableForSale);
 
-      if (msg.value < tokenPrice) throw;
+      require (msg.value >= tokenPrice);
 
       uint numTokens = msg.value.div(tokenPrice);
-      if(numTokens < 1) throw;
+      require(numTokens >= 1);
       //transfer money to PillarTokenFactory MultisigWallet
       pillarTokenFactory.transfer(msg.value);
 
       uint tokens = numTokens.mul(1e18);
       totalUsedTokens = totalUsedTokens.add(tokens);
-      if (totalUsedTokens > totalAvailableForSale) throw;
+      require(totalUsedTokens <= totalAvailableForSale);
 
       balances[msg.sender] = balances[msg.sender].add(tokens);
 
       //fire the event notifying the transfer of tokens
-      Transfer(0, msg.sender, tokens);
+      emit Transfer(0, msg.sender, tokens);
     }
 
     //@notice Function reports the number of tokens available for sale
@@ -136,11 +137,11 @@ contract PillarToken is StandardToken, Ownable {
     //@notice send any remaining balance to the MultisigWallet
     //@notice unsold tokens will be sent to icedwallet
     function finalize() isFundable onlyOwner external {
-      if (block.number <= fundingStopBlock) throw;
+      require(block.number > fundingStopBlock);
 
-      if (totalUsedTokens < minTokensForSale) throw;
+      require(totalUsedTokens >= minTokensForSale);
 
-      if(unsoldVault == address(0)) throw;
+      require(unsoldVault != address(0));
 
       // switch funding mode off
       fundingMode = false;
@@ -163,24 +164,24 @@ contract PillarToken is StandardToken, Ownable {
     //@notice Function that can be called by purchasers to refund
     //@notice Used only in case the ICO isn't successful.
     function refund() isFundable external {
-      if(block.number <= fundingStopBlock) throw;
-      if(totalUsedTokens >= minTokensForSale) throw;
+      require(block.number > fundingStopBlock);
+      require(totalUsedTokens < minTokensForSale);
 
       uint plrValue = balances[msg.sender];
-      if(plrValue == 0) throw;
+      require(plrValue != 0);
 
       balances[msg.sender] = 0;
 
       uint ethValue = plrValue.mul(tokenPrice).div(1e18);
       msg.sender.transfer(ethValue);
-      Refund(msg.sender, ethValue);
+      emit Refund(msg.sender, ethValue);
     }
 
     //@notice Function used for funding in case of refund.
     //@notice Can be called only by the Owner
     function allocateForRefund() external payable onlyOwner returns (uint){
       //does nothing just accepts and stores the ether
-      MoneyAddedForRefund(msg.sender,msg.value,this.balance);
+      emit MoneyAddedForRefund(msg.sender,msg.value,this.balance);
       return this.balance;
     }
 
@@ -192,7 +193,7 @@ contract PillarToken is StandardToken, Ownable {
       uint numOfTokens = _tokens.mul(1e18);
       totalPresale = totalPresale.add(numOfTokens);
 
-      if(totalPresale > maxPresaleTokens) throw;
+      require(totalPresale <= maxPresaleTokens);
 
       balances[_to] = balances[_to].add(numOfTokens);
     }
@@ -216,7 +217,7 @@ contract PillarToken is StandardToken, Ownable {
     //@param `_fundingStopBlock` - block from when ICO ends.
     //@notice Can be called only when funding is not active and only by the owner
     function startTokenSale(uint _fundingStartBlock, uint _fundingStopBlock) onlyOwner isNotFundable external returns (bool){
-      if(_fundingStopBlock <= _fundingStartBlock) throw;
+      require(_fundingStopBlock > _fundingStartBlock);
 
       fundingStartBlock = _fundingStartBlock;
       fundingStopBlock = _fundingStopBlock;

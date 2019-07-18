@@ -19,7 +19,7 @@ contract UnsoldAllocation is Ownable {
     Tokens reserved for future sale: 1,000,000
   */
 
-  function UnsoldAllocation(uint _lockTime, address _owner, uint _tokens) {
+  constructor(uint _lockTime, address _owner, uint _tokens) {
     if(_lockTime == 0) throw;
 
     if(_owner == address(0)) throw;
