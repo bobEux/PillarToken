@@ -24,6 +24,16 @@ contract BasicToken is ERC20Basic {
   }
 
   /**
+   * @dev Fix for the ERC20 short address attack.
+   */
+  modifier onlyPayloadSize(uint size) {
+    if(msg.data.length < size + 4) {
+      throw;
+    }
+    _;
+  }
+
+  /**
   * @dev Transfer token for a specified address
   * @param _to The address to transfer to.
   * @param _value The amount to be transferred.

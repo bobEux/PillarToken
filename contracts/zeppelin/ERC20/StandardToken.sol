@@ -27,6 +27,7 @@ contract StandardToken is ERC20, BasicToken {
     address _to,
     uint256 _value
   )
+  onlyPayloadSize(3 * 32)
   public
   returns (bool)
   {
